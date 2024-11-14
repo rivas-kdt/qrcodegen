@@ -2,7 +2,6 @@
 import React, { useRef, useState, useEffect } from "react";
 import { v4 as uuidv4 } from "uuid";
 import { QRCodeSVG } from "qrcode.react"; // Import the QRCode component
-import { sql } from "@vercel/postgres";
 
 
 function Home() {

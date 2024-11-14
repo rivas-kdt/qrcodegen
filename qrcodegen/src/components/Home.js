@@ -111,13 +111,8 @@ function Home() {
         </div>
         {uploadInfo && (
           <div>
-            <h2>Upload Info</h2>
-            <p>UUID: {uploadInfo.uuid}</p>
-            <p>URL: <a href={uploadInfo.url} target="_blank" rel="noopener noreferrer">{uploadInfo.url}</a></p>
-
-            {/* Generate and display the QR Code */}
             <h3>Scan the QR Code to Access the Photo:</h3>
-            <QRCodeSVG value={`https://qrcodegen-swart.vercel.app/post/3000`} size={256} />
+            <QRCodeSVG value={uploadInfo.url} size={256} />
           </div>
         )}
       </header>

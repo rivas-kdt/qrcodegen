@@ -34,7 +34,7 @@ const uploadHandler = async (req, res) => {
         token: process.env.BLOB_READ_WRITE_TOKEN, // Token for authorization
       });
       const client = await db.connect();
-      await client.sql`INSERT INTO qrdata (id, url, latitude, longitude) VALUES (${blob.url}, ${blob.url}, 145.5955, 12.9808)`;
+      await client.sql`INSERT INTO qrdata (id, url, latitude, longitude) VALUES (${uuid}, ${blob.url}, 145.5955, 12.9808)`;
 
       // Respond with the file metadata including uuid, location, and URL
       return res.status(200).json({

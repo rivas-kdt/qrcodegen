@@ -1,4 +1,3 @@
-import { sql } from '@vercel/postgres';  // Import the Vercel Postgres SDK
 import { IncomingForm } from 'formidable';  // For handling file uploads
 import fs from 'fs';
 import { put } from '@vercel/blob'; // Vercel Blob SDK
@@ -42,22 +41,6 @@ export default async function handler(req, res) {
         throw new Error("Failed to upload to Vercel Blob or missing URL in response");
       }
 
-      // Insert image metadata into Postgres database
-      const result = await sql`
-        INSERT INTO images (uuid, url, latitude, longitude)
-        VALUES (${uuid}, ${blob.url}, ${latitude}, ${longitude})
-        RETURNING *;`;
-
-      const insertedData = result.rows[0];  // Get the inserted row data
-
-      // Respond with the inserted data (metadata)
-      return res.status(200).json({
-        uuid: insertedData.uuid,
-        url: insertedData.url,
-        latitude: insertedData.latitude,
-        longitude: insertedData.longitude,
-        created_at: insertedData.created_at,
-      });
     } catch (error) {
       console.error('Error uploading to Vercel Blob or saving to Postgres:', error);
       return res.status(500).json({ error: 'Failed to upload file or save metadata', details: error.message });

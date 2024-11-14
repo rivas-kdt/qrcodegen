@@ -1,20 +1,15 @@
-// api/handler.ts
-import { createClient } from '@vercel/postgres';
-
-export default async function handler(req, res) {
-  const client = createClient();
-  await client.connect();
-
+import { sql } from '@vercel/postgres';
+ 
+export default async function handler(request, response) {
   try {
-    const { rows } = await client.sql`
-      SELECT * FROM qrdata;
-    `;
-
-    res.status(200).json({ posts: rows });
+    const petName = request.query.petName;
+    const ownerName = request.query.ownerName;
+    if (!petName || !ownerName) throw new Error('Pet and owner names required');
+    await sql`INSERT INTO Pets (Name, Owner) VALUES (${petName}, ${ownerName});`;
   } catch (error) {
-    console.error("Error querying the database:", error);
-    res.status(500).json({ error: "Failed to query database" });
-  } finally {
-    await client.end();
+    return response.status(500).json({ error });
   }
+ 
+  const pets = await sql`SELECT * FROM Pets;`;
+  return response.status(200).json({ pets });
 }

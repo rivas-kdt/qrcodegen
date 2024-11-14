@@ -7,7 +7,7 @@ import { sql } from "@vercel/postgres";
 
 function Home() {
 
-    const [data, setData] = useState({ lat: null, lng: null });
+    const [data, setData] = useState({});
     const getData = async () => {
         const { rows } = await sql`SELECT * from qrdata WHERE uuid=23`
         setData(rows)

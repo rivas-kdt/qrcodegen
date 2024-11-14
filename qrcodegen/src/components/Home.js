@@ -9,7 +9,7 @@ function Home() {
 
     const [data, setData] = useState({ lat: null, lng: null });
     const getData = async () => {
-        const { rows } = await sql`SELECT * from qrdata`
+        const { rows } = await sql`SELECT * from qrdata WHERE uuid=23`
         setData(rows)
     }
     console.log("talaga")

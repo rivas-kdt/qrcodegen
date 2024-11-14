@@ -1,6 +1,6 @@
 import { sql } from '@vercel/postgres';
 
-export default async function handler(req, res) {
+export default function handler(req, res) {
     // Send a response with status 200 and a JSON object
     let pet
     const fetchData = async () => {

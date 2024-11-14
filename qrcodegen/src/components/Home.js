@@ -2,12 +2,20 @@ import React, { useRef, useState, useEffect } from "react";
 import { v4 as uuidv4 } from "uuid";
 import { QRCodeSVG } from "qrcode.react"; // Import the QRCode component
 
+// Loading spinner component
+const LoadingSpinner = () => (
+  <div className="spinner">
+    <div className="circle"></div>
+  </div>
+);
+
 function Home() {
   const videoRef = useRef(null);
   const photoRef = useRef(null);
   const [hasPhoto, setHasPhoto] = useState(false);
   const [uploadInfo, setUploadInfo] = useState(null); // To store upload metadata
   const [location, setLocation] = useState({ lat: null, lng: null }); // To store latitude and longitude
+  const [isUploading, setIsUploading] = useState(false); // To manage upload state
 
   // Get video stream from webcam
   const getVideo = () => {
@@ -42,6 +50,13 @@ function Home() {
 
   // Upload photo to Vercel serverless function
   const uploadPhoto = async (file, uuid) => {
+    if (!location.lat || !location.lng) {
+      alert("Location data is not available. Please allow location access.");
+      return;
+    }
+
+    setIsUploading(true);  // Start loading state
+
     const formData = new FormData();
     formData.append("image", file);
     formData.append("uuid", uuid); // Send UUID along with the image
@@ -49,19 +64,16 @@ function Home() {
     formData.append("longitude", location.lng); // Send longitude
 
     try {
-      // Update the URL to point to your deployed Vercel function
       const response = await fetch("/api/upload", {
         method: "POST",
         body: formData,
       });
 
-      // Check if the response is successful
       if (!response.ok) {
         const errorData = await response.json();
         throw new Error(errorData.error || "Unknown error");
       }
 
-      // If upload is successful, parse the JSON response
       const result = await response.json();
       console.log("Upload successful:", result);
 
@@ -77,6 +89,8 @@ function Home() {
     } catch (error) {
       console.error("Upload failed:", error.message);
       alert("Upload failed: " + error.message);
+    } finally {
+      setIsUploading(false);  // End loading state
     }
   };
 
@@ -124,7 +138,9 @@ function Home() {
         <h1>Take a Photo and Upload</h1>
         <div>
           <video ref={videoRef} style={{ width: 600 }} />
-          <button onClick={takePhoto}>SNAP!</button>
+          <button onClick={takePhoto} disabled={isUploading}>
+            {isUploading ? "Uploading..." : "SNAP!"}
+          </button>
         </div>
 
         <div className={"result" + (hasPhoto ? " hasPhoto" : "")}>
@@ -132,13 +148,17 @@ function Home() {
           {hasPhoto && <button onClick={closePhoto}>Close!</button>}
         </div>
 
+        {isUploading && <LoadingSpinner />} {/* Show loading spinner while uploading */}
+
         {/* Display upload information */}
         {uploadInfo && (
           <div>
             <h2>Upload Info</h2>
             <p>UUID: {uploadInfo.uuid}</p>
             <p>Location: {uploadInfo.latitude}, {uploadInfo.longitude}</p>
-            <p>URL: <a href={uploadInfo.url} target="_blank" rel="noopener noreferrer">{uploadInfo.url}</a></p>
+            <p>
+              URL: <a href={uploadInfo.url} target="_blank" rel="noopener noreferrer">{uploadInfo.url}</a>
+            </p>
 
             {/* Generate and display the QR Code */}
             <h3>Scan the QR Code to Access the Photo:</h3>

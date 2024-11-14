@@ -1,18 +1,18 @@
-import { IncomingForm } from 'formidable';
+import { sql } from '@vercel/postgres';  // Import the Vercel Postgres SDK
+import { IncomingForm } from 'formidable';  // For handling file uploads
 import fs from 'fs';
 import { put } from '@vercel/blob'; // Vercel Blob SDK
-import { Client } from 'pg'; // PostgreSQL client
 
-// Disable default body parser to use 'formidable'
+// Disable default body parser to use 'formidable' for file uploads
 export const config = {
   api: {
-    bodyParser: false,
+    bodyParser: false,  // Disable the default body parser to handle file uploads manually
   },
 };
 
-const uploadHandler = async (req, res) => {
+export default async function handler(req, res) {
   const form = new IncomingForm();
-  form.uploadDir = '/tmp'; // Temp storage in Vercel's serverless environment
+  form.uploadDir = '/tmp';  // Temp storage in Vercel's serverless environment
   form.keepExtensions = true;
 
   form.parse(req, async (err, fields, files) => {
@@ -26,34 +26,28 @@ const uploadHandler = async (req, res) => {
     }
 
     const uuid = fields.uuid[0];  // Get UUID from form data (sent from frontend)
-    const latitude = fields.latitude[0];  // Get latitude
-    const longitude = fields.longitude[0]; // Get longitude
+    const latitude = parseFloat(fields.latitude[0]);  // Get latitude (from frontend)
+    const longitude = parseFloat(fields.longitude[0]); // Get longitude (from frontend)
 
     try {
-      // Upload the file to Vercel Blob
+      // Upload the file to Vercel Blob storage
       const blob = await put(file.originalFilename, fs.readFileSync(file.filepath), {
         access: 'public',
         token: process.env.BLOB_READ_WRITE_TOKEN, // Token for authorization
       });
 
-      // Database connection using the pg package
-      const client = new Client({
-        connectionString: process.env.DATABASE_URL, // Your database connection URL (from Vercel environment variable)
-      });
+      // Insert image metadata into Postgres database
+      const result = await sql`
+        INSERT INTO images (uuid, url, latitude, longitude)
+        VALUES (${uuid}, ${blob.url}, ${latitude}, ${longitude})
+        RETURNING *;`;
 
-      await client.connect();
+      const insertedData = result.rows[0];  // Get the inserted row data
 
-      // Insert image metadata into the 'images' table
-      const result = await client.query(
-        'INSERT INTO images (uuid, url, latitude, longitude) VALUES ($1, $2, $3, $4) RETURNING *',
-        [uuid, blob.url, latitude, longitude]
-      );
-
-      // Respond with the file metadata including uuid, location, and URL
-      const insertedData = result.rows[0]; // Get the inserted row data
+      // Respond with the inserted data (metadata)
       return res.status(200).json({
         uuid: insertedData.uuid,
-        location: insertedData.url,  // Blob URL
+        url: insertedData.url,
         latitude: insertedData.latitude,
         longitude: insertedData.longitude,
         created_at: insertedData.created_at,
@@ -61,10 +55,6 @@ const uploadHandler = async (req, res) => {
     } catch (error) {
       console.error('Error uploading to Vercel Blob or saving to Postgres:', error);
       return res.status(500).json({ error: 'Failed to upload file or save metadata', details: error.message });
-    } finally {
-      await client.end();
     }
   });
-};
-
-export default uploadHandler;
+}

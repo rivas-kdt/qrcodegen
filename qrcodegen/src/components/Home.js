@@ -7,21 +7,19 @@ import { QRCodeSVG } from "qrcode.react"; // Import the QRCode component
 function Home() {
 
     const [data, setData] = useState({});
-    const getData = async () => {
+
+    const fetchPosts = async () => {
         try {
-          const response = await fetch("/api/getData");
+          const response = await fetch('/api/queryPosts');
           if (!response.ok) {
-            throw new Error("Failed to fetch data");
+            throw new Error('Failed to fetch posts');
           }
-          const result = await response.json();
-          setData(result.data); // Set the fetched data
+          const data = await response.json();
+          setData(data.posts); // Set the posts state with the fetched data
         } catch (error) {
-          console.error("Error fetching data:", error);
+          console.error(error.message);
         }
       };
-    console.log("talaga")
-    console.log(data)
-    console.log("awit")
 
   const videoRef = useRef(null);
   const photoRef = useRef(null);
@@ -129,10 +127,12 @@ function Home() {
     setHasPhoto(false);
   };
 
+  console.log(data)
+
   useEffect(() => {
     getVideo();
     getLocation();
-    getData();
+    fetchPosts();
   }, []);
 
   return (

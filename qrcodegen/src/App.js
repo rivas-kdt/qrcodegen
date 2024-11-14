@@ -1,5 +1,5 @@
 import React, { useRef, useState, useEffect } from "react";
-import { isUuid } from 'uuidv4';
+import { v4 as uuidv4 } from 'uuid';
 
 function App() {
   const videoRef = useRef(null);

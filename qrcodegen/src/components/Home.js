@@ -10,7 +10,7 @@ function Home() {
 
     const fetchPosts = async () => {
         try {
-          const response = await fetch('/api/queryPosts');
+          const response = await fetch('/api/getData');
           if (!response.ok) {
             throw new Error('Failed to fetch posts');
           }

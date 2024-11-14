@@ -9,9 +9,17 @@ function Home() {
 
     const [data, setData] = useState({});
     const getData = async () => {
-        const { rows } = await sql`SELECT * from qrdata WHERE uuid=23`
-        setData(rows)
-    }
+        try {
+          const response = await fetch("/api/getData");
+          if (!response.ok) {
+            throw new Error("Failed to fetch data");
+          }
+          const result = await response.json();
+          setData(result.data); // Set the fetched data
+        } catch (error) {
+          console.error("Error fetching data:", error);
+        }
+      };
     console.log("talaga")
     console.log(data)
     console.log("awit")

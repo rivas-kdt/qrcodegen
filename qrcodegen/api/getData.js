@@ -1,12 +1,20 @@
-import { sql } from '@vercel/postgres';
- 
-export default async function handler(request, response) {
+// api/handler.ts
+import { createClient } from '@vercel/postgres';
+
+export default async function handler(req, res) {
+  const client = createClient();
+  await client.connect();
+
   try {
-    await sql`INSERT INTO qrdata (id, url, latitude, longitude) VALUES (1,'2',3,4);`;
+    const { rows } = await client.sql`
+      SELECT * FROM qrdata;
+    `;
+
+    res.status(200).json({ posts: rows });
   } catch (error) {
-    return response.status(500).json({ error });
+    console.error("Error querying the database:", error);
+    res.status(500).json({ error: "Failed to query database" });
+  } finally {
+    await client.end();
   }
- 
-  const pets = await sql`SELECT * FROM qrdata`;
-  return response.status(200).json({ pets });
 }

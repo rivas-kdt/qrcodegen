@@ -1,4 +1,3 @@
-// Home.js
 import React, { useRef, useState, useEffect } from "react";
 import { v4 as uuidv4 } from "uuid";
 import { QRCodeSVG } from "qrcode.react"; // Import the QRCode component
@@ -8,6 +7,7 @@ function Home() {
   const photoRef = useRef(null);
   const [hasPhoto, setHasPhoto] = useState(false);
   const [uploadInfo, setUploadInfo] = useState(null); // To store upload metadata
+  const [location, setLocation] = useState({ lat: null, lng: null }); // To store latitude and longitude
 
   // Get video stream from webcam
   const getVideo = () => {
@@ -23,11 +23,30 @@ function Home() {
       });
   };
 
+  // Get current location using the browser's Geolocation API
+  const getLocation = () => {
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          setLocation({
+            lat: position.coords.latitude,
+            lng: position.coords.longitude,
+          });
+        },
+        (error) => {
+          console.error("Error getting location", error);
+        }
+      );
+    }
+  };
+
   // Upload photo to Vercel serverless function
   const uploadPhoto = async (file, uuid) => {
     const formData = new FormData();
     formData.append("image", file);
     formData.append("uuid", uuid); // Send UUID along with the image
+    formData.append("latitude", location.lat);  // Send latitude
+    formData.append("longitude", location.lng); // Send longitude
 
     try {
       // Update the URL to point to your deployed Vercel function
@@ -50,6 +69,8 @@ function Home() {
       setUploadInfo({
         uuid: result.uuid,
         url: result.url,
+        latitude: result.latitude,
+        longitude: result.longitude,
       });
 
       alert("Photo uploaded successfully!");
@@ -94,6 +115,7 @@ function Home() {
 
   useEffect(() => {
     getVideo();
+    getLocation(); // Get location when the component mounts
   }, []);
 
   return (
@@ -109,10 +131,18 @@ function Home() {
           <canvas ref={photoRef}></canvas>
           {hasPhoto && <button onClick={closePhoto}>Close!</button>}
         </div>
+
+        {/* Display upload information */}
         {uploadInfo && (
           <div>
+            <h2>Upload Info</h2>
+            <p>UUID: {uploadInfo.uuid}</p>
+            <p>Location: {uploadInfo.latitude}, {uploadInfo.longitude}</p>
+            <p>URL: <a href={uploadInfo.url} target="_blank" rel="noopener noreferrer">{uploadInfo.url}</a></p>
+
+            {/* Generate and display the QR Code */}
             <h3>Scan the QR Code to Access the Photo:</h3>
-            <QRCodeSVG value={uploadInfo.url} size={256} />
+            <QRCodeSVG value={`${uploadInfo.url}/${uploadInfo.uuid}`} size={256} />
           </div>
         )}
       </header>

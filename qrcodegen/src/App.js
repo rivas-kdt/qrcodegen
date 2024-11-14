@@ -1,80 +1,100 @@
-import {useEffect, useRef, useState} from "react"
-import { put } from "@vercel/blob"
+import React, { useRef, useState, useEffect } from "react";
 
 function App() {
   const videoRef = useRef(null);
   const photoRef = useRef(null);
-  const [hasPhoto, setHasPhoto] = useState(false)
+  const [hasPhoto, setHasPhoto] = useState(false);
 
+  // Get video stream from webcam
   const getVideo = () => {
     navigator.mediaDevices
-      .getUserMedia({video: {width: 600, height: 360}
-      })
-      .then(stream => {
-        let video = videoRef.current
-        video.srcObject = stream
+      .getUserMedia({ video: { width: 600, height: 360 } })
+      .then((stream) => {
+        let video = videoRef.current;
+        video.srcObject = stream;
         video.play();
       })
-      .catch(err => {
-        console.log(err)
-      })
-  }
-
-  const uploadPhoto = async (dataURL) => {
-    try {
-      const response = await fetch(dataURL);
-      const blob = await response.blob();
-      const fileName = `photo-${Date.now()}.png`;
-      const result = await put(blob, {
-        path: fileName,
-        contentType: 'image/png',
+      .catch((err) => {
+        console.error("Error accessing webcam:", err);
       });
-  
-      console.log('Upload successful:', result);
+  };
+
+  // Upload photo to Vercel serverless function
+  const uploadPhoto = async (file) => {
+    const formData = new FormData();
+    formData.append("image", file);
+
+    try {
+      // Update the URL to point to your deployed Vercel function
+      const response = await fetch("/api/upload", { // Replace with Vercel URL if deployed
+        method: "POST",
+        body: formData,
+      });
+
+      // Check if the response is successful
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || "Unknown error");
+      }
+
+      // If upload is successful, parse the JSON response
+      const result = await response.json();
+      console.log("Upload successful:", result);
+      alert("Photo uploaded successfully!");
     } catch (error) {
-      console.error('Upload failed:', error);
+      console.error("Upload failed:", error.message);
+      alert("Upload failed: " + error.message);
     }
-};
+  };
 
   const takePhoto = () => {
     const width = 414;
-    const height = width / (16/9)
+    const height = width / (16 / 9);
+    let video = videoRef.current;
+    let photo = photoRef.current;
+    let ctx = photo.getContext("2d");
 
-    let video = videoRef.current
-    let photo = photoRef.current
+    photo.width = width;
+    photo.height = height;
+    ctx.drawImage(video, 0, 0, width, height);
 
-    photo.width=width
-    photo.height = height
+    photo.toBlob(async (blob) => {
+      if (blob) {
+        const file = new File([blob], `photo-${Date.now()}.png`, {
+          type: "image/png",
+        });
+        await uploadPhoto(file);
+      } else {
+        console.error("Failed to convert canvas to blob");
+      }
+    }, "image/png");
 
-    let ctx = photo.getContext('2d')
-    ctx.drawImage(video, 0 , 0, width, height)
-    const dataURL = photo.toDataURL('image/png')
-    uploadPhoto(dataURL)
-    setHasPhoto(true)
-  }
+    setHasPhoto(true);
+  };
 
   const closePhoto = () => {
-    let photo = photoRef.current
-    let ctx = photo.getContext('2d')
-    ctx.clearRect(0, 0, photo.width, photo.height)
-    setHasPhoto(false)
-  }
+    let photo = photoRef.current;
+    let ctx = photo.getContext("2d");
+    ctx.clearRect(0, 0, photo.width, photo.height);
+    setHasPhoto(false);
+  };
 
-  useEffect(()=>{
+  useEffect(() => {
     getVideo();
-  }, [videoRef])
+  }, []);
 
   return (
     <div className="App">
       <header className="App-header">
-        <p>HELLO WORLD</p>
+        <h1>Take a Photo and Upload</h1>
         <div>
-          <video ref={videoRef}></video>
+          <video ref={videoRef} style={{ width: 600 }} />
           <button onClick={takePhoto}>SNAP!</button>
         </div>
-        <div className={'result' + (hasPhoto ? 'hasPhoto' : '')}>
+
+        <div className={"result" + (hasPhoto ? " hasPhoto" : "")}>
           <canvas ref={photoRef}></canvas>
-          <button onClick={closePhoto}>Close!</button>
+          {hasPhoto && <button onClick={closePhoto}>Close!</button>}
         </div>
       </header>
     </div>

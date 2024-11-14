@@ -48,8 +48,10 @@ function Home() {
     }
   };
 
+  console.log(location)
+
   // Upload photo to Vercel serverless function
-  const uploadPhoto = async (file, uuid) => {
+  const uploadPhoto = async (file) => {
     if (!location.lat || !location.lng) {
       alert("Location data is not available. Please allow location access.");
       return;
@@ -59,9 +61,6 @@ function Home() {
 
     const formData = new FormData();
     formData.append("image", file);
-    formData.append("uuid", uuid); // Send UUID along with the image
-    formData.append("latitude", location.lat);  // Send latitude
-    formData.append("longitude", location.lng); // Send longitude
 
     try {
       const response = await fetch("/api/upload", {

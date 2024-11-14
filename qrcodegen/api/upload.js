@@ -1,49 +1,49 @@
-import { IncomingForm } from 'formidable';  // For handling file uploads
-import fs from 'fs';
-import { put } from '@vercel/blob'; // Vercel Blob SDK
+import { IncomingForm } from "formidable";
+import fs from "fs";
+import { put } from "@vercel/blob";  // Vercel Blob SDK
 
-// Disable default body parser to use 'formidable' for file uploads
+// Disable default body parser to use 'formidable'
 export const config = {
   api: {
-    bodyParser: false,  // Disable the default body parser to handle file uploads manually
+    bodyParser: false,
   },
 };
 
-export default async function handler(req, res) {
+const uploadHandler = async (req, res) => {
   const form = new IncomingForm();
-  form.uploadDir = '/tmp';  // Temp storage in Vercel's serverless environment
+  form.uploadDir = "/tmp"; // Temp storage in Vercel's serverless environment
   form.keepExtensions = true;
 
   form.parse(req, async (err, fields, files) => {
     if (err) {
-      return res.status(400).json({ error: 'Failed to parse form data', details: err.message });
+      return res.status(400).json({ error: "Failed to parse form data", details: err.message });
     }
 
     const file = files.image[0];  // Access the uploaded file
     if (!file) {
-      return res.status(400).json({ error: 'No file uploaded' });
+      return res.status(400).json({ error: "No file uploaded" });
     }
 
     const uuid = fields.uuid[0];  // Get UUID from form data (sent from frontend)
-    const latitude = parseFloat(fields.latitude[0]);  // Get latitude (from frontend)
-    const longitude = parseFloat(fields.longitude[0]); // Get longitude (from frontend)
 
     try {
-      // Upload the file to Vercel Blob storage
+      // Upload the file to Vercel Blob
       const blob = await put(file.originalFilename, fs.readFileSync(file.filepath), {
-        access: 'public',
+        access: "public",
         token: process.env.BLOB_READ_WRITE_TOKEN, // Token for authorization
       });
 
-      console.log("Blob upload successful:", blob); // Log the blob response
-
-      if (!blob || !blob.url) {
-        throw new Error("Failed to upload to Vercel Blob or missing URL in response");
-      }
-
+      // Respond with the file metadata including uuid, location, and URL
+      return res.status(200).json({
+        uuid: uuid,
+        location: file.filepath,  // Temporary storage location in Vercel
+        url: blob.url,            // URL of the uploaded blob
+      });
     } catch (error) {
-      console.error('Error uploading to Vercel Blob or saving to Postgres:', error);
-      return res.status(500).json({ error: 'Failed to upload file or save metadata', details: error.message });
+      console.error("Error uploading to Vercel Blob:", error);
+      return res.status(500).json({ error: "Failed to upload file", details: error.message });
     }
   });
-}
+};
+
+export default uploadHandler;

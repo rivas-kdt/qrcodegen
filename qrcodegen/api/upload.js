@@ -36,6 +36,12 @@ export default async function handler(req, res) {
         token: process.env.BLOB_READ_WRITE_TOKEN, // Token for authorization
       });
 
+      console.log("Blob upload successful:", blob); // Log the blob response
+
+      if (!blob || !blob.url) {
+        throw new Error("Failed to upload to Vercel Blob or missing URL in response");
+      }
+
       // Insert image metadata into Postgres database
       const result = await sql`
         INSERT INTO images (uuid, url, latitude, longitude)

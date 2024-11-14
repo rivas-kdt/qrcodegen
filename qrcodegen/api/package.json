@@ -11,6 +11,7 @@
   "description": "",
   "dependencies": {
     "@vercel/blob": "^0.26.0",
+    "@vercel/postgres": "^0.10.0",
     "formidable": "^3.5.2"
   }
 }

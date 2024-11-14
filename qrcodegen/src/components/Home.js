@@ -12,8 +12,9 @@ function Home() {
         const { rows } = await sql`SELECT * from qrdata`
         setData(rows)
     }
-
+    console.log("talaga")
     console.log(data)
+    console.log("awit")
 
   const videoRef = useRef(null);
   const photoRef = useRef(null);

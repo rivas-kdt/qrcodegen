@@ -2,8 +2,6 @@ import { sql } from '@vercel/postgres';
  
 export default async function handler(request, response) {
   try {
-    const petName = request.query.petName;
-    const ownerName = request.query.ownerName;
     if (!petName || !ownerName) throw new Error('Pet and owner names required');
     await sql`INSERT INTO qrdata (id, url, latitude, longitude) VALUES (1,'2',3,4);`;
   } catch (error) {

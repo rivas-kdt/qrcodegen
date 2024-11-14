@@ -1,5 +1,8 @@
-export default function handler(req, res) {
+import { sql } from '@vercel/postgres';
+
+export default async function handler(req, res) {
     // Send a response with status 200 and a JSON object
-    res.status(200).json({ message: 'Hello, World!' });
+    const pets = await sql`SELECT * FROM Pets;`;
+    res.status(200).json({ pets });
   }
   

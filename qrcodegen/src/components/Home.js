@@ -7,8 +7,15 @@ function Home() {
   const [data, setData] = useState({});
 
   const fetchPosts = async () => {
+    const formData = new FormData();
+    formData.append("petName", "Talaga");
+    formData.append("ownerName", "Ba"); 
     try {
-      const response = await fetch("/api/getData");
+      const response = await fetch("/api/getData", {
+        method: "POST",
+        body: formData,
+      });
+
       if (!response.ok) {
         throw new Error("Failed to fetch posts");
       }

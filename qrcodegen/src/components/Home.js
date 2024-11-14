@@ -2,8 +2,19 @@
 import React, { useRef, useState, useEffect } from "react";
 import { v4 as uuidv4 } from "uuid";
 import { QRCodeSVG } from "qrcode.react"; // Import the QRCode component
+import { sql } from "@vercel/postgres";
+
 
 function Home() {
+
+    const [data, setData] = useState({ lat: null, lng: null });
+    const getData = async () => {
+        const { rows } = await sql`SELECT * from qrdata`
+        setData(rows)
+    }
+
+    console.log(data)
+
   const videoRef = useRef(null);
   const photoRef = useRef(null);
   const [hasPhoto, setHasPhoto] = useState(false);
@@ -49,7 +60,6 @@ function Home() {
     formData.append("uuid", uuid); // Send UUID along with the image
 
     try {
-      // Update the URL to point to your deployed Vercel function
       const response = await fetch("/api/upload", {
         method: "POST",
         body: formData,
@@ -113,7 +123,8 @@ function Home() {
 
   useEffect(() => {
     getVideo();
-    getLocation()
+    getLocation();
+    getData();
   }, []);
 
   return (

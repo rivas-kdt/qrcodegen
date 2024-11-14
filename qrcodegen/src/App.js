@@ -1,10 +1,11 @@
 import React, { useRef, useState, useEffect } from "react";
-import { v4 as uuidv4 } from 'uuid';
+import { v4 as uuidv4 } from "uuid";
 
 function App() {
   const videoRef = useRef(null);
   const photoRef = useRef(null);
   const [hasPhoto, setHasPhoto] = useState(false);
+  const [uploadInfo, setUploadInfo] = useState(null); // To store upload metadata
 
   // Get video stream from webcam
   const getVideo = () => {
@@ -21,13 +22,14 @@ function App() {
   };
 
   // Upload photo to Vercel serverless function
-  const uploadPhoto = async (file) => {
+  const uploadPhoto = async (file, uuid) => {
     const formData = new FormData();
     formData.append("image", file);
+    formData.append("uuid", uuid); // Send UUID along with the image
 
     try {
       // Update the URL to point to your deployed Vercel function
-      const response = await fetch("/api/upload", { // Replace with Vercel URL if deployed
+      const response = await fetch("/api/upload", {
         method: "POST",
         body: formData,
       });
@@ -41,6 +43,13 @@ function App() {
       // If upload is successful, parse the JSON response
       const result = await response.json();
       console.log("Upload successful:", result);
+
+      // Set metadata for the uploaded file
+      setUploadInfo({
+        uuid: result.uuid,
+        url: result.url,
+      });
+
       alert("Photo uploaded successfully!");
     } catch (error) {
       console.error("Upload failed:", error.message);
@@ -61,11 +70,11 @@ function App() {
 
     photo.toBlob(async (blob) => {
       if (blob) {
-        const id = uuidv4()
+        const id = uuidv4();
         const file = new File([blob], `photo-${id}.png`, {
           type: "image/png",
         });
-        await uploadPhoto(file);
+        await uploadPhoto(file, id); // Pass the UUID
       } else {
         console.error("Failed to convert canvas to blob");
       }
@@ -98,6 +107,16 @@ function App() {
           <canvas ref={photoRef}></canvas>
           {hasPhoto && <button onClick={closePhoto}>Close!</button>}
         </div>
+
+        {/* Display upload information */}
+        {uploadInfo && (
+          <div>
+            <h2>Upload Info</h2>
+            <p>UUID: {uploadInfo.uuid}</p>
+            <p>Location: {uploadInfo.location}</p>
+            <p>URL: <a href={uploadInfo.url} target="_blank" rel="noopener noreferrer">{uploadInfo.url}</a></p>
+          </div>
+        )}
       </header>
     </div>
   );

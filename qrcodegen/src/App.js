@@ -1,4 +1,5 @@
 import React, { useRef, useState, useEffect } from "react";
+import { isUuid } from 'uuidv4';
 
 function App() {
   const videoRef = useRef(null);
@@ -60,7 +61,8 @@ function App() {
 
     photo.toBlob(async (blob) => {
       if (blob) {
-        const file = new File([blob], `photo-${Date.now()}.png`, {
+        const id = uuidv4()
+        const file = new File([blob], `photo-${id}.png`, {
           type: "image/png",
         });
         await uploadPhoto(file);
